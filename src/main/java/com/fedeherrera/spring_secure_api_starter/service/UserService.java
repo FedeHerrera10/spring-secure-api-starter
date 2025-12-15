@@ -17,4 +17,6 @@ public interface UserService {
     boolean existsByUsername(String username);
 
     boolean existsByEmail(String email);
+
+    void resetPassword(String token , String newPassword);
 }

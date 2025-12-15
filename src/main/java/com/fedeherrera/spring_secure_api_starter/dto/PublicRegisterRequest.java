@@ -3,12 +3,10 @@ package com.fedeherrera.spring_secure_api_starter.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
-public class RegisterRequest {
+@Data
+public class PublicRegisterRequest  {
 
     @NotBlank
     @Size(min = 4, max = 50)

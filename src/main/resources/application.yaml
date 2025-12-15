@@ -6,7 +6,7 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
   datasource:
-    url: ${DB_URL}
+    url: ${DB_URL}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -23,6 +23,19 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USER}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+    from: ${MAIL_FROM}
 
 server:
   port: ${SERVER_PORT:8080}
