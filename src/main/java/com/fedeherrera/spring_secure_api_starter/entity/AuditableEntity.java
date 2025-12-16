@@ -3,6 +3,7 @@ package com.fedeherrera.spring_secure_api_starter.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.PrePersist;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedBy;
@@ -34,4 +35,10 @@ public abstract class AuditableEntity {
     @LastModifiedBy
     @Column(name = "updated_by")
     private String updatedBy;
+
+    @PrePersist
+public void prePersist() {
+    System.out.println("createdAt BEFORE persist: " + createdAt);
+}
+
 }

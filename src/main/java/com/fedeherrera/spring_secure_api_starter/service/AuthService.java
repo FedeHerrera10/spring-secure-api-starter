@@ -1,13 +1,28 @@
 package com.fedeherrera.spring_secure_api_starter.service;
 
 import com.fedeherrera.spring_secure_api_starter.dto.AdminCreateUserRequest;
+import com.fedeherrera.spring_secure_api_starter.dto.LoginRequest;
+import com.fedeherrera.spring_secure_api_starter.dto.LoginResponse;
 import com.fedeherrera.spring_secure_api_starter.dto.PublicRegisterRequest;
 import com.fedeherrera.spring_secure_api_starter.entity.Role;
 import com.fedeherrera.spring_secure_api_starter.entity.User;
+import com.fedeherrera.spring_secure_api_starter.entity.UserPrincipal;
 import com.fedeherrera.spring_secure_api_starter.entity.VerificationToken;
+import com.fedeherrera.spring_secure_api_starter.exception.AuthException;
 import com.fedeherrera.spring_secure_api_starter.exception.RegistrationException;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +38,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final VerificationService verificationService;
     private final EmailService emailService;
+    private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
     /**
      * Registro de usuario base
      * - Password encriptado
@@ -99,6 +116,29 @@ public class AuthService {
         userService.save(user);
 
         
+    }
+
+    public LoginResponse login(LoginRequest request) {
+
+        try{
+        Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getUsername(),
+                        request.getPassword()
+                )
+        );
+
+        UserPrincipal userPrincipal = (UserPrincipal) auth.getPrincipal();
+        User user = userPrincipal.getUser();
+        String accessToken = jwtService.generateToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
+        return new LoginResponse(user.getUsername(), accessToken, refreshToken, user.getRoles().iterator().next().getName());
+    }
+    catch (BadCredentialsException e) {
+        throw new AuthException("Credenciales inválidas");
+    } catch (DisabledException e) {
+        throw new AuthException("Usuario no verificado");
+    }
     }
 
 }

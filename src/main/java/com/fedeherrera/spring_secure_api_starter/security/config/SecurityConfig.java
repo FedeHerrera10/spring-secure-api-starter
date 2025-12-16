@@ -1,6 +1,12 @@
 package com.fedeherrera.spring_secure_api_starter.security.config;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.fedeherrera.spring_secure_api_starter.filter.JwtAuthFilter;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -10,12 +16,13 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
 
+@RequiredArgsConstructor
 @Configuration
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final JwtAuthFilter jwtAuthFilter; // filtro JWT
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -42,14 +49,23 @@ public class SecurityConfig {
                     "/auth/login",
                     "/auth/verify",
                     "/auth/forgot-password",
-                    "/auth/reset-password"
+                    "/auth/reset-password",
+                    "/auth/oauth2/**"
                 ).permitAll()
 
                 .anyRequest().authenticated()
             )
 
-            // 🔐 Temporal (hasta JWT)
+            // 🔐 OAuth2 login
+            .oauth2Login(oauth2 -> oauth2
+                .defaultSuccessUrl("/auth/oauth2/success", true)
+            )
+
+            // 🔐 HTTP Basic temporal
             .httpBasic(basic -> {})
+
+            // 🔐 JWT filter
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
 
             .build();
     }
