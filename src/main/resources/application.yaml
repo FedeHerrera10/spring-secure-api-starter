@@ -1,10 +1,8 @@
 spring:
-  application:
-    name: secure-api
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/secure_api?useSSL=false&serverTimezone=UTC}
+    url: ${DB_URL:jdbc:mysql://localhost:33066/secure_api?useSSL=false&serverTimezone=UTC}
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:}
+    password: ${DB_PASSWORD:mroot}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -22,11 +20,10 @@ spring:
     properties:
       mail:
         smtp:
-          auth: true
+          auth: ${MAIL_AUTH:true}
           starttls:
-            enable: true
+            enable: ${MAIL_TLS:true}
     from: ${MAIL_FROM}
-
   security:
     oauth2:
       client:
@@ -34,13 +31,33 @@ spring:
           google:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
-            scope: email,profile
-            redirect-uri: "{baseUrl}/auth/oauth2/callback"
+            scope: 
+              - email
+              - profile
+              - openid
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
+
+# Google OAuth2 Configuration
+google:
+  oauth2:
+    client:
+      id: ${GOOGLE_CLIENT_ID}
+      secret: ${GOOGLE_CLIENT_SECRET}
 
 server:
   port: ${SERVER_PORT:8080}
 
-# Configuración de Swagger/OpenAPI
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:900000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
+
+# Swagger/OpenAPI Configuration
 springdoc:
   api-docs:
     path: /v3/api-docs
@@ -52,10 +69,3 @@ springdoc:
   show-actuator: true
   packages-to-scan: com.fedeherrera.spring_secure_api_starter
   default-consumes-media-type: application/json
-  default-produces-media-type: application/json
-
-# Configuración de JWT
-jwt:
-  secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:900000} # 15 minutos
-  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 días

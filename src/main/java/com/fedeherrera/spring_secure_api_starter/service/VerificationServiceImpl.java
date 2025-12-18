@@ -2,10 +2,12 @@ package com.fedeherrera.spring_secure_api_starter.service;
 
 import com.fedeherrera.spring_secure_api_starter.entity.User;
 import com.fedeherrera.spring_secure_api_starter.entity.VerificationToken;
+import com.fedeherrera.spring_secure_api_starter.entity.VerificationToken.TokenType;
 import com.fedeherrera.spring_secure_api_starter.repository.VerificationTokenRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -18,7 +20,7 @@ public class VerificationServiceImpl implements VerificationService {
 
     private final VerificationTokenRepository tokenRepository;
     private final EmailService emailService;
-
+    
     @Override
     @Transactional
     public VerificationToken createToken(User user) {
@@ -27,6 +29,7 @@ public class VerificationServiceImpl implements VerificationService {
         VerificationToken token = VerificationToken.builder()
                 .token(tokenStr)
                 .user(user)
+                .type(TokenType.VERIFICATION)
                 .expiresAt(LocalDateTime.now().plusHours(24)) // expira en 24h
                 .build();
 
@@ -72,6 +75,8 @@ public Optional<User> validatePasswordResetToken(String token) {
             .filter(t -> t.getExpiresAt().isAfter(LocalDateTime.now()))
             .map(VerificationToken::getUser);
 }
+
+
 
  
 

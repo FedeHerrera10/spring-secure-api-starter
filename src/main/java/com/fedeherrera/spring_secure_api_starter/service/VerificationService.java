@@ -3,7 +3,7 @@ package com.fedeherrera.spring_secure_api_starter.service;
 import com.fedeherrera.spring_secure_api_starter.entity.User;
 import com.fedeherrera.spring_secure_api_starter.entity.VerificationToken;
 
-import java.util.Optional;
+    import java.util.Optional;
 
 public interface VerificationService {
 
@@ -25,4 +25,5 @@ public interface VerificationService {
     Optional<User> validatePasswordResetToken(String token);
     
     void createPasswordResetToken(User user);
+
 }

@@ -36,9 +36,6 @@ public abstract class AuditableEntity {
     @Column(name = "updated_by")
     private String updatedBy;
 
-    @PrePersist
-public void prePersist() {
-    System.out.println("createdAt BEFORE persist: " + createdAt);
-}
+ 
 
 }

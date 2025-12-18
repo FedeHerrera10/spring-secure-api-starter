@@ -3,7 +3,10 @@ package com.fedeherrera.spring_secure_api_starter.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.Set;
+
+import com.fedeherrera.spring_secure_api_starter.dto.AuthProviderEnum;
 
 @Getter
 @Setter
@@ -36,6 +39,12 @@ public class User extends AuditableEntity {
      @Builder.Default
     @Column(nullable = false)
     private boolean enabled = false;
+
+    private LocalDateTime passwordChangedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private AuthProviderEnum provider = AuthProviderEnum.LOCAL;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

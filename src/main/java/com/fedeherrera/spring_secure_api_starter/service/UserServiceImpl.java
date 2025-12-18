@@ -7,14 +7,17 @@ import com.fedeherrera.spring_secure_api_starter.repository.VerificationTokenRep
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
@@ -59,9 +62,14 @@ public void resetPassword(String token, String newPassword) {
             .orElseThrow(() -> new RegistrationException("Token inválido o expirado"));
 
     user.setPassword(passwordEncoder.encode(newPassword));
+
+    user.setPasswordChangedAt(LocalDateTime.now()); // 👈 Aquí invalidamos los tokens anteriores
+    
     userRepository.save(user);
 
     verificationTokenRepository.deleteByToken(token);
+    log.info("Contraseña actualizada para el usuario {}. Tokens previos invalidados.", user.getEmail());
+    
 }
 
 }
