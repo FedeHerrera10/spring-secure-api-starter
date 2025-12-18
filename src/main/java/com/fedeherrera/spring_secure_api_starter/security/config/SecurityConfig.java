@@ -9,6 +9,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.fedeherrera.spring_secure_api_starter.filter.JwtAuthFilter;
+import com.fedeherrera.spring_secure_api_starter.filter.RateLimitFilter;
 import com.fedeherrera.spring_secure_api_starter.security.exception.CustomAccessDeniedHandler;
 import com.fedeherrera.spring_secure_api_starter.security.exception.JwtAuthenticationEntryPoint;
 
@@ -27,6 +28,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+
 @RequiredArgsConstructor
 @Configuration
 @EnableMethodSecurity
@@ -38,6 +40,7 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter; // filtro JWT
     private final JwtAuthenticationEntryPoint unauthorizedHandler; // Inyectamos nuestro nuevo componente
     private final CustomAccessDeniedHandler accessDeniedHandler;
+    private final RateLimitFilter rateLimitFilter;
 
     private static final String[] SWAGGER_WHITELIST = {
             "/v3/api-docs/**",
@@ -82,7 +85,9 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .defaultSuccessUrl("/auth/oauth2/success", true))
 
-                // 6. El Filtro JWT debe ir antes del de usuario/contraseña
+                // 6 . Filtro de rating limit 
+                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+                // 7. El Filtro JWT debe ir antes del de usuario/contraseña
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
 
                 .build();
