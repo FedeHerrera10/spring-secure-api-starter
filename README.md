@@ -295,3 +295,69 @@ com.fedeherrera.spring-secure-api-starter
     
 -   Buenas prácticas y seguridad
     
+-----------------------------------------------------
+Despligue 
+
+🏗️ 1. Arquitectura del Sistema
+La solución se compone de 4 contenedores interconectados en una red privada virtual:
+
+API (Spring Boot): La lógica de negocio.
+
+DB (MySQL): Almacenamiento persistente.
+
+Prometheus: Recolector de métricas (Time-series database).
+
+Grafana: Visualización de datos y dashboards.
+
+🔑 2. El flujo de las Variables de Entorno (.env)
+El archivo .env es el "corazón" de la configuración. El flujo de los datos es el siguiente:
+
+Archivo .env: Almacena valores crudos (claves, puertos, hosts).
+
+Docker Compose: Lee el .env automáticamente y usa la sintaxis ${VARIABLE} para inyectar esos valores en el contenedor.
+
+Spring Boot: Recibe estas variables como Variables de Entorno del Sistema. Spring las mapea automáticamente a las propiedades de application.yml.
+
+Ejemplo de "Cableado":
+En .env: DB_PASSWORD=mroot
+
+En docker-compose.yml:
+
+YAML
+
+environment:
+  - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+En application.yml:
+
+YAML
+
+spring:
+  datasource:
+    password: ${SPRING_DATASOURCE_PASSWORD}
+🛠️ 3. Paso a Paso de la Implementación
+Paso 1: Dockerización de la API (Dockerfile)
+Creamos un archivo de dos etapas (Multi-stage build):
+
+Etapa de compilación: Usa Maven para transformar el código fuente en un archivo .jar.
+
+Etapa de ejecución: Usa una imagen ligera de Java (eclipse-temurin) para correr solo el .jar, reduciendo el tamaño y aumentando la seguridad.
+
+Paso 2: Orquestación (docker-compose.yml)
+Definimos los servicios y sus dependencias. Usamos depends_on con un healthcheck para asegurar que la API no intente arrancar hasta que MySQL esté totalmente listo para recibir conexiones.
+
+Paso 3: Configuración de Prometheus
+Creamos una carpeta prometheus_config con un archivo prometheus.yml.
+
+Target: Le decimos a Prometheus que viaje a http://api-service:8080/actuator/prometheus cada 15 segundos para "raspar" (scrape) las métricas de la API.
+
+Paso 4: Visualización en Grafana
+Conectamos Grafana con Prometheus usando el nombre del servicio interno de Docker (http://prometheus:9090) y cargamos el Dashboard ID 4701 para visualizar el estado de la JVM.
+
+🚀 4. Comandos Clave
+Levantar todo el sistema: docker-compose up -d
+
+Forzar reconstrucción (si cambias código Java o el Dockerfile): docker-compose up --build -d
+
+Ver logs de la API en tiempo real: docker logs -f spring-api
+
+Apagar y borrar volúmenes (limpieza total): docker-compose down -v

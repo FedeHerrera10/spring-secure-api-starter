@@ -78,6 +78,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(SWAGGER_WHITELIST).permitAll() // Documentación
                         .requestMatchers(AUTH_WHITELIST).permitAll() // Auth endpoints
+                        .requestMatchers("/actuator/**").permitAll()
                         .anyRequest().authenticated() // Todo lo demás bloqueado
                 )
 
