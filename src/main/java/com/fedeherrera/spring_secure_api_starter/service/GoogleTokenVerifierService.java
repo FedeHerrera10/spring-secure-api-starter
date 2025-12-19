@@ -3,15 +3,15 @@ package com.fedeherrera.spring_secure_api_starter.service;
 import java.util.List;
 
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Service;  
 
 import com.fedeherrera.spring_secure_api_starter.config.GoogleAuthProperties;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
-
 @Service
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "google.oauth2.client.id")
 public class GoogleTokenVerifierService {
 
     private final GoogleAuthProperties properties;

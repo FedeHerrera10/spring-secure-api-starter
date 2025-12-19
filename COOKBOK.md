@@ -1016,3 +1016,92 @@ Actualmente usas `AuditorAware<String>` y devuelves `auth.getName()`.
 -   **Desventaja:** Si el usuario cambia su _username_, los registros viejos quedarían con el nombre antiguo.
     
 -   **Nivel Senior:** Muchos arquitectos prefieren usar `AuditorAware<Long>` o `AuditorAware<UUID>` para guardar el **ID del usuario**. Sin embargo, para un _starter_ donde la legibilidad es clave, usar el nombre es una decisión perfectamente válida y muy común.
+
+-----------------------------------------------------------------------
+
+Vamos a crear un dashboard desde cero diseñado para tu API Starter.
+
+1. Crear el Dashboard en blanco
+En Grafana, ve al icono de "+" (Create) o Dashboards y selecciona New Dashboard.
+
+Haz clic en + Add Visualization.
+
+Selecciona tu Data Source de Prometheus.
+
+2. Panel 1: El "Semáforo" de Errores (Gauge)
+Este panel te dirá cuántos errores 4xx (errores del cliente o Rate Limit) están ocurriendo ahora mismo.
+
+Query (PromQL):
+
+Fragmento de código
+
+sum(rate(http_server_requests_seconds_count{status=~"4.."}[5m]))
+Configuración:
+
+En el panel derecho, cambia el tipo de visualización a Gauge.
+
+Title: Errores de Cliente (4xx).
+
+Thresholds (Umbrales): Pon verde en 0, naranja en 5 y rojo en 10.
+
+Si ves un número alto, alguien está siendo bloqueado por el Rate Limit o fallando logins.
+
+3. Panel 2: Los Endpoints más usados (Bar Chart)
+Para saber qué partes de tu API son las más populares.
+
+Query (PromQL):
+
+Fragmento de código
+
+sum by (uri) (rate(http_server_requests_seconds_count[5m]))
+Configuración:
+
+Visualización: Bar Gauge.
+
+Title: Top Endpoints (Peticiones/seg).
+
+En el panel derecho, busca Orientation y ponlo en Horizontal.
+
+4. Panel 3: Latencia de Respuesta (Heatmap o Time Series)
+Para saber si la API está lenta.
+
+Query (PromQL):
+
+Fragmento de código
+
+sum by (uri) (http_server_requests_seconds_max)
+Configuración:
+
+Visualización: Time Series.
+
+Title: Tiempo de Respuesta Máximo por Endpoint.
+
+En Standard options -> Unit, selecciona Time / seconds (s).
+
+5. Panel 4: Estado del Rate Limit (429 Too Many Requests)
+Este es clave para tu seguridad. Solo mostrará cuando la API esté rechazando tráfico por exceso de peticiones.
+
+Query (PromQL):
+
+Fragmento de código
+
+sum(rate(http_server_requests_seconds_count{status="429"}[5m]))
+Configuración:
+
+Visualización: Stat.
+
+Color mode: Background.
+
+Si el número es mayor a 0, verás un bloque rojo vibrante avisándote del bloqueo.
+
+💾 No olvides Guardar
+Haz clic en el icono del Disco (Save dashboard) arriba a la derecha.
+
+Ponle un nombre como: "API Secure - Control de Tráfico".
+
+🚀 Prueba de fuego
+Para ver cómo se llena tu nuevo Dashboard:
+
+Abre tu terminal y usa curl o simplemente refresca tu navegador en el endpoint de login muchas veces seguidas hasta que el Rate Limit te bloquee.
+
+Mira Grafana: verás cómo el panel de 429 se enciende y la gráfica de latencia registra tus intentos.
