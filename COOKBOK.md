@@ -1105,3 +1105,72 @@ Para ver cómo se llena tu nuevo Dashboard:
 Abre tu terminal y usa curl o simplemente refresca tu navegador en el endpoint de login muchas veces seguidas hasta que el Rate Limit te bloquee.
 
 Mira Grafana: verás cómo el panel de 429 se enciende y la gráfica de latencia registra tus intentos.
+
+📝 Receta: Monitoreo de Logs con Grafana Loki y Promtail
+Esta guía explica cómo configurar un pipeline de logs para una aplicación Spring Boot corriendo en Docker (Windows/WSL2).
+
+1. El Ingrediente Base: Spring Boot
+Para que la aplicación emita logs que podamos capturar, necesitamos un archivo físico.
+
+Archivo: src/main/resources/logback-spring.xml
+
+Secreto: Definir un RollingFileAppender que escriba en una ruta interna del contenedor.
+
+XML
+
+<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>/app/logs/app.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+        <fileNamePattern>/app/logs/app.%d{yyyy-MM-dd}.log</fileNamePattern>
+    </rollingPolicy>
+    <encoder>
+        <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level --- [%thread] %logger{36} : %msg%n</pattern>
+    </encoder>
+</appender>
+2. El Cartero: Promtail
+Promtail es el agente que "lee" el archivo y lo envía a Loki.
+
+Archivo: promtail-config.yaml
+
+Punto clave: La indentación de __path__ bajo labels.
+
+YAML
+
+scrape_configs:
+  - job_name: spring-api-logs
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: spring-api-logs
+          __path__: /var/log/app/*.log  # Ruta interna donde Promtail busca logs
+3. El Almacén: Loki
+Loki recibe los logs y los indexa por etiquetas (como job). No requiere configuración compleja, con la imagen oficial de Grafana funciona por defecto en el puerto 3100.
+
+4. El Puente: Docker Compose
+Aquí es donde unimos todo. Los volúmenes y la zona horaria son críticos.
+
+Volúmenes: Deben coincidir entre la API y Promtail.
+
+Timezone: Usar TZ=America/Argentina/Buenos_Aires para evitar desfases de 3 horas.
+
+YAML
+
+services:
+  api-service:
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
+    volumes:
+      - ./logs:/app/logs  # Comparte la carpeta con el host y otros containers
+
+  promtail:
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
+    volumes:
+      - ./logs:/var/log/app
+      - ./promtail-config.yaml:/etc/promtail/config.yaml
+5. Visualización: Grafana
+DataSource: Agregar Loki con la URL http://loki:3100.
+
+Explore: Usar la consulta {job="spring-api-logs"}.
+
+Tip: Si los logs no aparecen, cambiar el rango de tiempo a "Last 6 hours" y asegurarse de que el Timezone en las preferencias sea "Browser Time".

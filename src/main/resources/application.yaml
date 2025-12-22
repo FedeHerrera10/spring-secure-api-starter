@@ -1,11 +1,14 @@
 spring:
   application:
-    name: ${APP_NAME:spring-api}
+    name: ${APP_NAME:spring-secure-api}
+  
+  # Configuración de Base de Datos para Docker
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:33066/secure_api?useSSL=false&serverTimezone=UTC}
+    url: ${DB_URL:jdbc:mysql://db:3306/secure_api?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:mroot}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  
   jpa:
     hibernate:
       ddl-auto: validate
@@ -14,18 +17,22 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MySQL8Dialect
+
+  # Configuración de Mail
   mail:
-    host: ${MAIL_HOST}
-    port: ${MAIL_PORT}
-    username: ${MAIL_USER}
-    password: ${MAIL_PASSWORD}
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
     properties:
       mail:
         smtp:
-          auth: ${MAIL_AUTH:true}
+          auth: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:true}
           starttls:
-            enable: ${MAIL_TLS:true}
-    from: ${MAIL_FROM}
+            enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:true}
+    from: ${MAIL_FROM:no-reply@tuapp.com}
+
+  # OAuth2 con Google
   security:
     oauth2:
       client:
@@ -39,7 +46,7 @@ spring:
               - openid
             redirect-uri: "{baseUrl}/login/oauth2/code/google"
 
-# Google OAuth2 Configuration
+# Google OAuth2 Extra Config
 google:
   oauth2:
     client:
@@ -49,7 +56,7 @@ google:
 server:
   port: ${SERVER_PORT:8080}
 
-# JWT Configuration
+# Seguridad JWT
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:900000}
@@ -57,13 +64,13 @@ jwt:
 
 app:
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 
+# Monitoreo y Actuator (Métricas para Prometheus)
 management:
   endpoints:
     web:
       exposure:
-        # Exponemos salud, métricas y el endpoint específico de prometheus
         include: "health,info,metrics,prometheus"
   endpoint:
     health:
@@ -72,19 +79,24 @@ management:
       enabled: true
   metrics:
     tags:
-      application: ${spring.application.name} # Etiqueta para identificar tu app en Grafana
+      application: ${spring.application.name}
 
-# Swagger/OpenAPI Configuration
+# Documentación OpenAPI / Swagger
 springdoc:
   api-docs:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
-    operationsSorter: method
-    tagsSorter: alpha
-    doc-expansion: none
   show-actuator: true
   packages-to-scan: com.fedeherrera.spring_secure_api_starter
-  default-consumes-media-type: application/json
 
-  
+# CONFIGURACIÓN DE LOGS PARA LOKI
+logging:
+  file:
+    # Esta ruta debe coincidir con el volumen en docker-compose
+    - LOGGING_FILE_NAME=/app/logs/app.log
+    - LOGGING_FILE_PATH=/app/logs 
+  level:
+    com.fedeherrera.spring_secure_api_starter: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG

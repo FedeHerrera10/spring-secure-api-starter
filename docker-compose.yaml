@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # --- Base de Datos ---
   db:
@@ -6,8 +8,9 @@ services:
     environment:
       MYSQL_DATABASE: secure_api
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      TZ: America/Argentina/Buenos_Aires
     ports:
-      - "33067:3306" # Mapeamos 33066 para que coincida con tu config local
+      - "33067:3306"
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       timeout: 5s
@@ -17,36 +20,58 @@ services:
   api-service:
     build: .
     container_name: spring-api
+    user: root
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     environment:
-      # Sobrescribimos el localhost por 'db' que es el nombre del servicio en Docker
+      - TZ=America/Argentina/Buenos_Aires
       - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/secure_api?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
-      # Configuración de Mail
       - SPRING_MAIL_HOST=${MAIL_HOST}
       - SPRING_MAIL_PORT=${MAIL_PORT}
       - SPRING_MAIL_USERNAME=${MAIL_USER}
       - SPRING_MAIL_PASSWORD=${MAIL_PASSWORD}
-      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=${MAIL_AUTH}
-      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=${MAIL_TLS}
-      # Seguridad y JWT
       - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRATION=${JWT_EXPIRATION}
-      - JWT_REFRESH_EXPIRATION=${JWT_REFRESH_EXPIRATION}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - LOGGING_FILE_NAME=/app/logs/app.log 
+    volumes:
+      - ./logs:/app/logs
     depends_on:
       db:
         condition: service_healthy
 
-  # --- Monitoreo ---
+  # --- LOKI (Almacén de logs) ---
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+
+  # --- PROMTAIL (Recolector de logs) ---
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
+    volumes:
+      - ./logs:/var/log/app
+      - ./promtail-config.yaml:/etc/promtail/config.yaml
+    command: -config.file=/etc/promtail/config.yaml
+    depends_on:
+      - loki
+
+  # --- MONITOREO ---
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
     volumes:
       - ./prometheus_config/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
@@ -61,5 +86,8 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - TZ=America/Argentina/Buenos_Aires
+      - GF_DATE_FORMATS_USE_BROWSER_LOCALE=true
     depends_on:
       - prometheus
+      - loki

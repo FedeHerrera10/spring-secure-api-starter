@@ -1,6 +1,5 @@
 package com.fedeherrera.spring_secure_api_starter.filter;
 
-import com.fedeherrera.spring_secure_api_starter.entity.UserPrincipal;
 import com.fedeherrera.spring_secure_api_starter.service.JwtService;
 import com.fedeherrera.spring_secure_api_starter.service.UserDetailsServiceImpl;
 
